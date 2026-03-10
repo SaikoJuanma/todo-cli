@@ -1,0 +1,53 @@
+name: Rust - smoke deb (multi-arch)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: ${{ forgejo.ref_name }}-rust-deb
+  cancel-in-progress: true
+
+jobs:
+  smoke_deb:
+    runs-on: rust
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - arm-unknown-linux-gnueabihf
+          - armv7-unknown-linux-gnueabihf
+
+    env:
+      DOCKER_HOST: tcp://docker-in-docker:2375
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.forgejo/actions/setup-rust
+
+      - name: Install tools
+        run: |
+          cargo install cross --locked
+          cargo install cargo-deb --locked
+
+      - name: Cross build
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Build .deb
+        shell: bash
+        run: |
+          case "${{ matrix.target }}" in
+            x86_64-unknown-linux-gnu)
+              cargo deb --no-build --target x86_64-unknown-linux-gnu -v
+              ;;
+            armv7-unknown-linux-gnueabihf)
+              cargo deb --no-build --target armv7-unknown-linux-gnueabihf -v --no-strip
+              ;;
+            arm-unknown-linux-gnueabihf)
+              cargo deb --no-build --target arm-unknown-linux-gnueabihf -v --no-strip
+              ;;
+          esac
+

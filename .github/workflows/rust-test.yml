@@ -1,0 +1,33 @@
+name: Rust - test
+
+on:
+  push:
+    paths:
+      - "**/*.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain"
+      - "rust-toolchain.toml"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "**/*.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain"
+      - "rust-toolchain.toml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ forgejo.ref_name }}-rust-test
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.forgejo/actions/setup-rust
+      - name: cargo test
+        run: cargo test --all --locked
+

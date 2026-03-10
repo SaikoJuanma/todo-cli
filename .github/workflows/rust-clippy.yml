@@ -1,0 +1,33 @@
+name: Rust - clippy
+
+on:
+  push:
+    paths:
+      - "**/*.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain"
+      - "rust-toolchain.toml"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "**/*.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain"
+      - "rust-toolchain.toml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ forgejo.ref_name }}-rust-clippy
+  cancel-in-progress: true
+
+jobs:
+  clippy:
+    runs-on: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.forgejo/actions/setup-rust
+      - name: cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+

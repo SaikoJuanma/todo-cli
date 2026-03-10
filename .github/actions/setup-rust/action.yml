@@ -1,0 +1,11 @@
+name: "Setup Rust"
+description: "Install Rust toolchain + common deps"
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Rust toolchain
+      shell: bash
+      run: |
+        chmod +x "${GITHUB_ACTION_PATH}/setup-rust.sh"
+        "${GITHUB_ACTION_PATH}/setup-rust.sh"
+

@@ -1,0 +1,40 @@
+name: Rust - cross build (multi-arch)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "**/*.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain"
+      - "rust-toolchain.toml"
+
+concurrency:
+  group: ${{ forgejo.ref_name }}-rust-cross
+  cancel-in-progress: true
+
+jobs:
+  cross_build:
+    runs-on: rust
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - arm-unknown-linux-gnueabihf
+          - armv7-unknown-linux-gnueabihf
+
+    env:
+      # Útil si tu DIND está accesible por nombre dentro de la red del runner
+      DOCKER_HOST: tcp://docker-in-docker:2375
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.forgejo/actions/setup-rust
+      - name: Install cross
+        run: cargo install cross --locked
+      - name: Cross build
+        run: cross build --release --target ${{ matrix.target }}
+
