@@ -1,39 +1,68 @@
+use crate::sorting::reorder;
 use crate::storage::{load_todos, save_todos};
 use crate::todo::Todo;
 
 pub fn add(title: String) {
     let mut todos = load_todos();
-    let id = todos.iter().map(|t| t.id).max().unwrap_or(0) + 1;
-    todos.push(Todo {
-        id,
-        title,
-        done: false,
-    });
+    // Push before done items, reorder will fix ids
+    let insert_pos = todos.iter().position(|t| t.done).unwrap_or(todos.len());
+    todos.insert(
+        insert_pos,
+        Todo {
+            id: 0,
+            title,
+            done: false,
+        },
+    );
+    let todos = reorder(todos);
     save_todos(&todos);
-    println!("Added todo #{id}");
+    println!(
+        "✅ Added todo #{}",
+        todos.iter().filter(|t| !t.done).count()
+    );
 }
 
 pub fn list() {
     let todos = load_todos();
     if todos.is_empty() {
-        println!("Nothing left to do!");
+        println!("🎉 Nothing left to do!");
         return;
     }
-    for t in &todos {
-        let mark = if t.done { "[x]" } else { "[ ]" };
-        println!("{} {} - {}", mark, t.id, t.title);
+
+    let pending: Vec<_> = todos.iter().filter(|t| !t.done).collect();
+    let done: Vec<_> = todos.iter().filter(|t| t.done).collect();
+
+    println!("\n📋 TODO LIST\n");
+
+    if !pending.is_empty() {
+        println!("📌 Pending:");
+        for t in &pending {
+            println!("  [ ] {} - {}", t.id, t.title);
+        }
     }
+
+    if !done.is_empty() {
+        println!("\n✅ Done:");
+        for t in &done {
+            println!("  \x1b[9m[x] {} - {}\x1b[0m", t.id, t.title);
+        }
+    }
+
+    println!();
 }
 
 pub fn done(id: u32) {
     let mut todos = load_todos();
-    if let Some(todo) = todos.iter_mut().find(|t| t.id == id) {
+    if let Some(pos) = todos.iter().position(|t| t.id == id) {
+        let mut todo = todos.remove(pos);
         todo.done = true;
-        println!("Marked #{id} as done");
+        todos.push(todo);
+        let todos = reorder(todos);
+        save_todos(&todos);
+        println!("✅ Marked #{id} as done");
     } else {
-        println!("Todo #{id} not found");
+        println!("❌ Todo #{id} not found");
     }
-    save_todos(&todos);
 }
 
 pub fn remove(id: u32) {
@@ -41,9 +70,10 @@ pub fn remove(id: u32) {
     let before = todos.len();
     todos.retain(|t| t.id != id);
     if todos.len() < before {
-        println!("Removed #{id}");
+        let todos = reorder(todos);
+        save_todos(&todos);
+        println!("🗑️  Removed #{id}");
     } else {
-        println!("Todo #{id} not found");
+        println!("❌ Todo #{id} not found");
     }
-    save_todos(&todos);
 }
