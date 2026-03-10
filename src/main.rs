@@ -13,6 +13,12 @@ fn main() {
         Command::Add { title } => commands::add(title),
         Command::List => commands::list(),
         Command::Done { id } => commands::done(id),
-        Command::Remove { id } => commands::remove(id),
+        Command::Remove { target } => match target.as_str() {
+            "done" => commands::remove_done(),
+            _ => match target.parse::<u32>() {
+                Ok(n) => commands::remove(n),
+                Err(_) => println!("❌ Invalid argument: '{target}'. Use an id or 'done'"),
+            },
+        },
     }
 }

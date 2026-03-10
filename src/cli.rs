@@ -12,5 +12,5 @@ pub enum Command {
     Add { title: String },
     List,
     Done { id: u32 },
-    Remove { id: u32 },
+    Remove { target: String },
 }

@@ -77,3 +77,20 @@ pub fn remove(id: u32) {
         println!("❌ Todo #{id} not found");
     }
 }
+
+pub fn remove_done() {
+    let mut todos = load_todos();
+    let before = todos.len();
+    todos.retain(|t| !t.done);
+    let removed = before - todos.len();
+    if removed > 0 {
+        let todos = reorder(todos);
+        save_todos(&todos);
+        println!(
+            "🗑️  Removed {removed} completed todo{}",
+            if removed == 1 { "" } else { "s" }
+        );
+    } else {
+        println!("✅ No completed todos to remove");
+    }
+}
